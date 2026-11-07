@@ -1,0 +1,20 @@
+# Tóm tắt ngắn gọn
+
+**Phần 1: Googling**
+- Câu "văn nói" nhiều từ nhiễu, thiếu từ khóa kỹ thuật và mã lỗi nguyên văn nên Google trả kết quả kém.
+- Bóc tách: **npm/Node.js, Windows 11, VS Code** | lỗi `'npm' is not recognized...` | đang gõ `npm -v`.
+- 3 truy vấn: `site:stackoverflow.com ...`, `"'npm' is not recognized as an internal or external command" ...`, `... -xp`.
+
+**Phần 2: StackOverflow**
+- **A** (+186, tích xanh, 2 năm, tag khớp Windows) là câu nên áp dụng.
+- **B** (+2, không tích xanh, 9 năm, tag Windows XP) là bẫy: sai hệ điều hành, sai bản chất lỗi (PATH, không phải driver mạng), có thể làm mất mạng.
+- 30 giây đọc lướt: Tiêu đề → Tags → Accepted/vote cao → Thời gian đăng → Đọc lệnh trong câu trả lời.
+
+**Phần 3: AI**
+- Prompt 3 thành phần: Ngữ cảnh (Windows 11, VS Code, đã thêm PATH vẫn lỗi) → Lỗi nguyên văn → Yêu cầu (giải thích + cách kiểm tra an toàn).
+- Lệnh `del /f /s /q C:\Windows\System32\*` **không an toàn**: xóa file lõi Windows, không liên quan lỗi PATH (ảo giác), cần quyền Admin. **Không chạy**, hỏi lại AI và đối chiếu nguồn chính thống.
+
+**Phần 4: Bug Report**
+- Tin nhắn kém: "Thầy ơi em cài node bị lỗi, giúp em với."
+- Tin nhắn chuẩn gồm 4 mảnh: **Context, Expected, Actual, Log & Screenshot**.
+- Chụp màn hình: **Win + Shift + S**. Lưu ý bảo mật: che tên người dùng, API Key, mật khẩu, token trước khi gửi.

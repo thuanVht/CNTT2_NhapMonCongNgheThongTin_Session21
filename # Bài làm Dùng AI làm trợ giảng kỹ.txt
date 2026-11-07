@@ -1,0 +1,109 @@
+# Bài làm: Dùng AI làm "trợ giảng kỹ thuật 24/7" xử lý lỗi trạm sạc VoltCharge #04
+
+## Phần 1: Thiết kế Prompt 3 Thành phần Chuẩn hóa
+
+### 1. Vì sao câu hỏi "AI ơi phần mềm trạm sạc của tôi bị hỏng rồi, làm sao đây?" khiến AI trả lời sai?
+
+AI không "nhìn thấy" trạm sạc của bạn. Nó chỉ có đúng một câu chữ để suy luận. Câu hỏi này thiếu gần như mọi thông tin cần thiết, nên AI buộc phải **đoán mò** và điền vào chỗ trống bằng những kịch bản phổ biến nhất trong dữ liệu huấn luyện. Đó chính là cơ chế của ảo giác (Hallucination). Cụ thể:
+
+- **Thiếu ngữ cảnh:** Không nói rõ là phần mềm chạy trên Windows hay Linux, thiết bị gì, đang làm tác vụ gì. AI không biết đây là lỗi hệ điều hành, lỗi ứng dụng hay lỗi phần cứng.
+- **Thiếu bằng chứng:** Không đưa thông báo lỗi nguyên văn. Mã lỗi `UnauthorizedAccessException` và `exit code 5` là manh mối quyết định, nhưng AI không được thấy.
+- **Từ ngữ mơ hồ:** "Hỏng" và "trạm sạc" khiến AI liên tưởng đến thiết bị điện, nên gợi ý kiểm tra dây điện, tháo vỏ sắt. Trong khi lỗi thực chất là phần mềm.
+- **Không có yêu cầu đầu ra:** Không chỉ rõ cần giải thích hay cần các bước khắc phục, nên AI tự chọn hướng trả lời chung chung.
+
+Tóm lại: **câu hỏi mơ hồ → AI thiếu dữ liệu → AI tự bịa ngữ cảnh → câu trả lời tự tin nhưng sai bản chất.**
+
+### 2. Prompt 3 Thành phần hoàn chỉnh
+
+```
+[Context]
+Tôi là kỹ thuật viên trực ca đêm, đang vận hành trụ sạc nhanh số 04 thuộc hệ thống
+Kiosk VoltCharge tại Bến xe Miền Đông. Máy tính điều khiển (Terminal) chạy Windows 11.
+Trụ sạc đột ngột dừng cấp điện cho xe taxi điện. Đây là lỗi PHẦN MỀM trên máy tính
+điều khiển, không phải sự cố phần cứng hay dây điện. Tôi là người mới nên cần
+giải thích dễ hiểu.
+
+[Raw Error]
+2026-09-21 21:15:30 [FATAL] ControllerDaemon failed to start.
+System.UnauthorizedAccessException: Access to the path
+'C:\Program Files\VoltCharge\data\session.log' is denied.
+  at System.IO.FileStream.ValidateFileHandle(SafeFileHandle handle)
+  at VoltCharge.Core.SessionManager.Initialize()
+InnerException: None. Process terminated with exit code 5 (0x00000005).
+Suggestion: Run the application with elevated administrator privileges or verify NTFS file permissions.
+
+[Instruction]
+1. Dịch và giải thích lỗi trên bằng tiếng Việt bình dân, nêu rõ nguyên nhân gốc rễ.
+2. Đưa ra đúng 3 bước khắc phục cụ thể trên Windows 11, ưu tiên cách an toàn nhất.
+3. Cảnh báo những lệnh hoặc thao tác nào KHÔNG nên làm.
+4. Nếu thiếu thông tin để kết luận chắc chắn, hãy nói rõ thay vì đoán.
+```
+
+---
+
+## Phần 2: Giải mã Lỗi & Kịch bản Khắc phục
+
+### 3. Giải thích lỗi bằng tiếng Việt đời thường
+
+**Bản dịch:** *"Không thể khởi động chương trình điều khiển. Chương trình không có quyền truy cập vào tập tin `session.log` nằm trong thư mục `C:\Program Files\VoltCharge\data`, nên bị từ chối."*
+
+**Hiểu đơn giản bằng ví dụ:** Hãy tưởng tượng thư mục `Program Files` như **phòng kho có khóa** của tòa nhà. Phần mềm trạm sạc là một nhân viên cần vào kho để ghi sổ nhật ký (`session.log`) mỗi khi bắt đầu một phiên sạc. Nhưng nhân viên này **không được cấp chìa khóa** (không có quyền Quản trị viên), nên bảo vệ (Windows) chặn lại. Không ghi được sổ thì chương trình dừng luôn, và trụ sạc ngừng cấp điện.
+
+**Nguyên nhân gốc rễ:** Chương trình đang chạy bằng tài khoản thường, nhưng cố ghi file vào thư mục được Windows bảo vệ. Lỗi thuộc loại **Permission Error (lỗi phân quyền)**.
+
+**Các manh mối trong log xác nhận điều đó:**
+- `UnauthorizedAccessException` + `is denied` = bị từ chối quyền truy cập.
+- `exit code 5` = mã lỗi chuẩn của Windows nghĩa là "Access Denied".
+- Dòng `Suggestion` ở cuối cũng gợi ý chạy bằng quyền Admin hoặc kiểm tra quyền NTFS.
+
+**Kết luận:** Đây là lỗi phần mềm/phân quyền, **không cần mở vỏ trụ sạc hay kiểm tra dây điện**.
+
+### 4. Ba bước xử lý tại chỗ trên Windows 11
+
+**Bước 1: Chạy ứng dụng với quyền Quản trị viên (để xác nhận nguyên nhân)**
+- Tìm biểu tượng ứng dụng VoltCharge, **nhấp chuột phải → Run as administrator**, chọn **Yes** ở hộp thoại UAC.
+- Nếu trụ sạc hoạt động lại, nguyên nhân đã được xác nhận là thiếu quyền. Đây mới là giải pháp tạm thời.
+
+**Bước 2: Cấp quyền ghi cho thư mục `data` (khắc phục lâu dài)**
+1. Mở File Explorer, vào `C:\Program Files\VoltCharge\`.
+2. Nhấp chuột phải thư mục **data** → **Properties** → tab **Security** → **Edit**.
+3. Chọn tài khoản chạy dịch vụ (ví dụ `Users` hoặc tài khoản dịch vụ của VoltCharge) → tích **Allow** ở ô **Modify** và **Write** → **Apply** → **OK**.
+4. Chỉ cấp quyền cho **thư mục `data`**, không cấp cho cả `Program Files`.
+
+**Bước 3: Cấu hình để tự chạy đúng quyền và kiểm tra lại**
+1. Nhấp chuột phải file `.exe` → **Properties** → tab **Compatibility** → tích **Run this program as an administrator** → **OK** (hoặc cấu hình dịch vụ chạy bằng tài khoản có quyền phù hợp).
+2. Khởi động lại ứng dụng/ControllerDaemon, mở `session.log` kiểm tra đã có dòng ghi mới, thử một phiên sạc để xác nhận trụ sạc #04 hoạt động bình thường.
+3. Ghi lại sự cố và báo quản lý kỹ thuật để xử lý triệt để (nên lưu log vào thư mục dữ liệu như `C:\ProgramData\VoltCharge`).
+
+**Lưu ý an toàn:** Không tắt UAC, không cấp quyền *Full Control* cho *Everyone* trên toàn bộ ổ đĩa, vì như vậy mở cửa cho mã độc.
+
+### 5. Bẫy an ninh: chuỗi `API_KEY: volt_secret_token_889922`
+
+**Cách xử lý trước khi dán:** **Che hoặc xóa (redact) giá trị bí mật**, thay bằng ký hiệu giữ chỗ, ví dụ:
+
+```
+API_KEY: [REDACTED]
+```
+hoặc `API_KEY: ********`
+
+Chỉ giữ lại cấu trúc dòng log để AI vẫn hiểu ngữ cảnh. Kiểm tra toàn bộ đoạn log (kể cả mật khẩu CSDL, token, OTP, chuỗi kết nối) trước khi nhấn gửi.
+
+**Lý do:**
+1. **Dữ liệu gửi lên AI là dữ liệu rời khỏi hệ thống của công ty.** Nó được lưu trên máy chủ bên thứ ba, có thể bị ghi log, bị người có thẩm quyền xem, hoặc rò rỉ qua lỗi bảo mật/tài khoản bị chiếm.
+2. **Lộ API Key = trao chìa khóa hệ thống cho người lạ.** Kẻ xấu có thể giả mạo trạm sạc, truy cập hệ thống thanh toán/điều khiển VoltCharge, gây thiệt hại tài chính và mất an toàn vận hành.
+3. **AI không cần khóa bí mật để chẩn đoán lỗi.** Lỗi ở đây là phân quyền file, hoàn toàn không liên quan đến giá trị của key. Che đi không làm giảm chất lượng câu trả lời.
+4. **Nếu lỡ dán rồi:** coi key đó đã bị lộ, báo quản trị viên và **thu hồi, đổi key mới ngay**.
+
+Đây chính là nguyên tắc vàng thứ 3: **tuyệt đối không gửi Secret, mật khẩu CSDL hay mã OTP lên cửa sổ chat AI.**
+
+---
+
+### Tóm tắt nhanh
+
+| Nội dung | Điểm cốt lõi |
+|---|---|
+| Vì sao AI trả lời sai | Thiếu ngữ cảnh + thiếu log nguyên văn → AI đoán mò |
+| Prompt chuẩn | `[Context]` → `[Raw Error]` → `[Instruction]` |
+| Nguyên nhân lỗi | Ứng dụng không có quyền ghi vào `Program Files\...\data` |
+| Cách xử lý | Run as Administrator → cấp quyền Modify/Write cho thư mục `data` → cấu hình và kiểm tra lại |
+| Bảo mật | Che `API_KEY` thành `[REDACTED]` trước khi gửi AI |
